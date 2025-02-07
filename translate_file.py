@@ -3,19 +3,19 @@ import re
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from concurrent.futures import ThreadPoolExecutor
 import threading
+import settings
 
 tokenizer_lock = threading.Lock()
-output_file = "output.txt"
 
-def split_sentences(text, language="de"):
-    paragraph_breaks = re.split(r'(\n{2,})', text)
+def split_sentences(text, language=settings.SENTENCE_SPLIT_LANGUAGE):
+    #Split text into segments (sentences or paragraph breaks)
+    paragraph_breaks = re.split(r'(\n{2,})', text)  #Split on 2+ newlines
     segmenter = pysbd.Segmenter(language=language, clean=True)
     elements = []
-    
-    #Preserve paragraph breaks and process text segments
     for part in paragraph_breaks:
         if not part:
             continue
+        #Preserve paragraph breaks and process text segments
         if re.match(r'\n{2,}', part):
             elements.append(part)
         else:
@@ -23,38 +23,34 @@ def split_sentences(text, language="de"):
     return elements
 
 def translate_sentence(sentence, tokenizer, model, target_lang_token_id):
+    #Skip translation for paragraph breaks
     if sentence.strip() == '':
         return sentence
-        
     with tokenizer_lock:
         inputs = tokenizer(sentence, return_tensors="pt")
     tokens = model.generate(**inputs, forced_bos_token_id=target_lang_token_id)
     with tokenizer_lock:
         translation = tokenizer.batch_decode(tokens, skip_special_tokens=True)[0]
-    print(f'\"{translation}\"')
+    print(f'Translated: {translation}')
     return translation
 
 def main():
-    model_name = "facebook/nllb-200-distilled-1.3B"
     print("Loading tokenizer and model.")
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-    tokenizer.src_lang = "deu_Latn"
-    target_lang_token_id = tokenizer.convert_tokens_to_ids("eng_Latn")
-    
-    with open("input.txt", "r", encoding="utf-8") as infile:
+    tokenizer = AutoTokenizer.from_pretrained(settings.MODEL_NAME)
+    model = AutoModelForSeq2SeqLM.from_pretrained(settings.MODEL_NAME)
+    tokenizer.src_lang = settings.SOURCE_LANG
+    target_lang_token_id = tokenizer.convert_tokens_to_ids(settings.TARGET_LANG)
+    with open(settings.INPUT_FILE, "r", encoding="utf-8") as infile:
         text = infile.read()
-    elements = split_sentences(text, language="de")
+    elements = split_sentences(text)
     translations = [None] * len(elements)
-    
     print("Starting translation:")
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=settings.MAX_THREADS) as executor:
         futures = []
         for idx, element in enumerate(elements):
             if element.strip() == '':  #Paragraph break
                 translations[idx] = element
                 continue
-                
             future = executor.submit(
                 translate_sentence,
                 element,
@@ -62,9 +58,8 @@ def main():
                 model,
                 target_lang_token_id
             )
-            future.idx = idx  #Track original position
+            future.idx = idx
             futures.append(future)
-
         #Collect results in completion order but store in original positions
         for future in futures:
             try:
@@ -73,7 +68,6 @@ def main():
             except Exception as e:
                 print(f"Error translating sentence: {e}")
                 translations[future.idx] = "[TRANSLATION ERROR]"
-
     #Reconstruct text with proper spacing
     output_parts = []
     for i, elem in enumerate(translations):
@@ -84,10 +78,9 @@ def main():
            translations[i+1].strip() != '':
             output_parts.append(' ')
     output_text = ''.join(output_parts)
-    
-    with open(output_file, "w", encoding="utf-8") as outfile:
+    with open(settings.OUTPUT_FILE, "w", encoding="utf-8") as outfile:
         outfile.write(output_text)
-    print(f"Translation complete and written to {output_file}.")
+    print(f"Translation complete and written to {settings.OUTPUT_FILE}.")
 
 if __name__ == "__main__":
     main()
