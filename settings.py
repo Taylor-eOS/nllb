@@ -2,8 +2,8 @@
 MODEL_NAME = "facebook/nllb-200-distilled-1.3B"
 
 #Languages
-SOURCE_LANG = "eng_Latn"
-TARGET_LANG = "deu_Latn"
+SOURCE_LANG = "deu_Latn" #"eng_Latn"
+TARGET_LANG = "dan_Latn" #"deu_Latn"
 SENTENCE_SPLIT_LANGUAGE = "en"
 
 #Input and output file paths
