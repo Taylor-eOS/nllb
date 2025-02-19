@@ -63,6 +63,7 @@ class TranslationReviewer:
         corrected_translation = self.translation_text.get(1.0, "end-1c")
         original_index = self.data.index(self.filtered_data[self.current_index])
         self.data[original_index]["translation"] = corrected_translation
+        self.data[original_index]["corrected"] = True
         with open("output_corrected.json", "w", encoding="utf-8") as f:
             json.dump(self.data, f, ensure_ascii=False, indent=4)
         self.current_index += 1

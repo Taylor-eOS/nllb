@@ -54,6 +54,7 @@ def translate_sentence(sentence, tokenizer, model, target_lang_token_id):
 
 def main():
     print("Loading tokenizer and model.")
+    counter = 1
     tokenizer = AutoTokenizer.from_pretrained(settings.MODEL_NAME)
     model = AutoModelForSeq2SeqLM.from_pretrained(settings.MODEL_NAME)
     tokenizer.src_lang = settings.SOURCE_LANG
@@ -61,7 +62,6 @@ def main():
     with open(settings.INPUT_FILE, "r", encoding="utf-8") as infile:
         text = infile.read()
     elements = split_sentences(text)
-    
     # Process elements to split long sentences based on token count
     processed_elements = []
     for elem in elements:
@@ -76,7 +76,6 @@ def main():
         else:
             processed_elements.append(elem)
     elements = processed_elements
-
     translations = [None] * len(elements)
     print("Starting translation:")
     with ThreadPoolExecutor(max_workers=settings.MAX_THREADS) as executor:
@@ -116,11 +115,16 @@ def main():
         if original == PARAGRAPH_PLACEHOLDER:
             translation_pairs.append({
                 "original": "[PARAGRAPH_BREAK]",
-                "translation": "[PARAGRAPH_BREAK]"})
+                "translation": "[PARAGRAPH_BREAK]",
+                "number": counter,
+                "corrected": False})
         else:
             translation_pairs.append({
                 "original": original,
-                "translation": translation})
+                "translation": translation,
+                "number": counter,
+                "corrected": False})
+        counter = counter + 1
     json_output_file = settings.OUTPUT_FILE.replace(".txt", ".json")
     with open(json_output_file, "w", encoding="utf-8") as jsonfile:
         json.dump(translation_pairs, jsonfile, ensure_ascii=False, indent=4)
