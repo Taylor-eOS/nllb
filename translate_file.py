@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 tokenizer_lock = threading.Lock()
 PARAGRAPH_PLACEHOLDER = "\n\n"
 
-def split_sentences(text, language=settings.SENTENCE_SPLIT_LANGUAGE):
+def split_sentences(text, language=settings.SOURCE_LANG[:2]):
     paragraph_breaks = re.split(r'(\n{2,})', text)
     segmenter = pysbd.Segmenter(language=language, clean=True)
     elements = []

@@ -2,7 +2,9 @@ import json
 import tkinter as tk
 import threading
 from tkinter import ttk, messagebox, simpledialog
-from llm import get_advice
+#from llm import get_advice
+from marianmt import get_advice
+#from utils import next_uncorrected, skip_to_sentence
 
 class TranslationReviewer:
     def __init__(self, master):
@@ -28,7 +30,7 @@ class TranslationReviewer:
         self.translation_label.pack(pady=5)
         self.translation_text = tk.Text(self.master, height=6, width=60, wrap="word")
         self.translation_text.pack(padx=10, pady=5)
-        self.llm_label = ttk.Label(self.master, text="LLM advice:", font=("Arial", 10, "bold"))
+        self.llm_label = ttk.Label(self.master, text="Advice:", font=("Arial", 10, "bold"))
         self.llm_label.pack(pady=5)
         self.llm_text = tk.Text(self.master, height=4, width=60, wrap="word", bg="#f0f0f0", state="disabled")
         self.llm_text.pack(padx=10, pady=5)
@@ -71,7 +73,7 @@ class TranslationReviewer:
         if getattr(self, "prefetched_index", None) == self.current_index:
             self.llm_text.insert("end", self.prefetched_advice)
         else:
-            self.llm_text.insert("end", "Loading advice...")
+            self.llm_text.insert("end", "Loading...")
             self.advice_token = getattr(self, "advice_token", 0) + 1
             token = self.advice_token
             threading.Thread(target=self.fetch_llm_advice, args=(item["original"], token, self.current_index), daemon=True).start()
@@ -133,7 +135,7 @@ class TranslationReviewer:
                 self.current_index = idx
                 self.load_current_item()
                 return
-        messagebox.showinfo("No More", "No uncorrected translation found.")
+        messagebox.showinfo("No More", "No more uncorrected translations found.")
 
 def main():
     root = tk.Tk()

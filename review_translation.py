@@ -30,7 +30,7 @@ class TranslationReviewer:
         self.original_label.pack(pady=5)
         self.original_text = tk.Text(self.master, height=4, width=60, wrap="word", bg="#f0f0f0", state="disabled")
         self.original_text.pack(padx=10, pady=5)
-        self.translation_label = ttk.Label(self.master, text="Translation (editable):", font=("Arial", 10, "bold"))
+        self.translation_label = ttk.Label(self.master, text="Translation:", font=("Arial", 10, "bold"))
         self.translation_label.pack(pady=5)
         self.translation_text = tk.Text(self.master, height=6, width=60, wrap="word")
         self.translation_text.pack(padx=10, pady=5)
@@ -42,6 +42,8 @@ class TranslationReviewer:
         self.skip_button.pack(side="left", padx=5)
         self.status_label = ttk.Label(self.master, text="")
         self.status_label.pack(pady=5)
+        self.next_uncorrected_button = ttk.Button(self.button_frame, text="Next Uncorrected", command=self.next_uncorrected)
+        self.next_uncorrected_button.pack(side="left", padx=5)
 
     def load_current_item(self):
         if self.current_index >= self.total_items:
@@ -69,6 +71,14 @@ class TranslationReviewer:
         self.current_index += 1
         self.load_current_item()
 
+    def next_uncorrected(self):
+        for idx in range(self.current_index + 1, self.total_items):
+            if not self.filtered_data[idx].get("corrected", False):
+                self.current_index = idx
+                self.load_current_item()
+                return
+        messagebox.showinfo("No More", "No more uncorrected translations found.")
+
     def skip_to_sentence(self):
         search_text = simpledialog.askstring("Skip to Sentence", "Enter beginning of sentence:")
         if not search_text:
@@ -80,6 +90,14 @@ class TranslationReviewer:
                 self.load_current_item()
                 return
         messagebox.showinfo("Not Found", "No matching sentence found.")
+
+    def next_uncorrected(self):
+        for idx in range(self.current_index + 1, self.total_items):
+            if not self.filtered_data[idx].get("corrected", False):
+                self.current_index = idx
+                self.load_current_item()
+                return
+        messagebox.showinfo("No More", "No more uncorrected translations found.")
 
 def main():
     root = tk.Tk()
