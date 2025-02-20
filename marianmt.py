@@ -1,5 +1,4 @@
 from transformers import MarianMTModel, MarianTokenizer
-from llm import get_advice
 import settings
 
 source_l = settings.SOURCE_LANG

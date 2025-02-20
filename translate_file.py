@@ -114,15 +114,17 @@ def main():
     for original, translation in zip(elements, translations):
         if original == PARAGRAPH_PLACEHOLDER:
             translation_pairs.append({
+                "number": counter,
                 "original": "[PARAGRAPH_BREAK]",
                 "translation": "[PARAGRAPH_BREAK]",
-                "number": counter,
-                "corrected": False})
+                "advice": "",
+                "corrected": True})
         else:
             translation_pairs.append({
+                "number": counter,
                 "original": original,
                 "translation": translation,
-                "number": counter,
+                "advice": "",
                 "corrected": False})
         counter = counter + 1
     json_output_file = settings.OUTPUT_FILE.replace(".txt", ".json")

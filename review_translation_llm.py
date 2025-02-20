@@ -84,7 +84,7 @@ class TranslationReviewer:
             threading.Thread(target=self.prefetch_llm_advice, args=(next_item["original"], next_index), daemon=True).start()
 
     def fetch_llm_advice(self, original_text, token, index):
-        advice = get_advice(original_text)
+        advice = self.get_advice_preload(original_text, index)
         self.master.after(0, self.update_llm_text, advice, token, index)
 
     def update_llm_text(self, advice, token, index):
@@ -96,8 +96,16 @@ class TranslationReviewer:
         self.llm_text.config(state="disabled")
 
     def prefetch_llm_advice(self, original_text, index):
-        advice = get_advice(original_text)
+        advice = self.get_advice_preload(original_text, index)
         self.master.after(0, self.store_prefetched_advice, advice, index)
+
+    def get_advice_preload(self, text, ind):
+        advice_preload = self.data[ind]["advice"]
+        if advice_preload == "":
+            advice = get_advice(text)
+        else:
+            advice = advice_preload
+        return advice
 
     def store_prefetched_advice(self, advice, index):
         if index >= self.current_index:
