@@ -11,4 +11,4 @@ OUTPUT_FILE = "output.txt"
 
 #Threading settings
 MAX_THREADS = 6
-TOKEN_LIMIT = 1000
+TOKEN_LIMIT = 100

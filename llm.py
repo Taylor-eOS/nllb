@@ -7,11 +7,11 @@ MODEL_NAME = "stabilityai/stablelm-zephyr-3b"
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.bfloat16).to(device)
-
 TABLE = {'eng_Latn': 'English', 'deu_Latn': 'German', 'spa_Latn': 'Spanish', 'jpn_Jpan': 'Japanese', 'fra_Latn': 'French', 'fin_Latn': 'Finnish', 'dan_Latn': 'Danish'} #Add as needed
 
 def get_advice(text, source=settings.SOURCE_LANG, target=settings.TARGET_LANG):
-    prompt = f"Translate from {TABLE[source]} to {TABLE[target]} without other comments (for use in programmatic translation): `{text}`. Translation:"
+    #prompt = f"Translate from {TABLE[source]} to {TABLE[target]} without other comments (for use in programmatic translation): `{text}`. Translation:"
+    prompt = f"Translate the {TABLE[source]} sentence \"`{text}`\" into {TABLE[target]}, without other comments (for use in programmatic derival). {TABLE[target]} translation: "
     #prompt = f"Translate from {TABLE[source]} to {TABLE[target]} without any other comment, as it is used in programmatic translation: `{text}`. This is a suggested translation, correct it: '{suggestion}'. {TABLE[target]} translation: "
     print(prompt)
     inputs = tokenizer(prompt, return_tensors="pt").to(device)

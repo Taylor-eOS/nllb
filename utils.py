@@ -18,3 +18,11 @@ def next_uncorrected(self):
             return
     messagebox.showinfo("No More", "No more uncorrected translations found.")
 
+def load_settings(key):
+    with open('settings.json', 'r') as f:
+        settings = json.load(f)
+        value = settings.get(key)
+    if not key:
+        raise ValueError("Read token not found in settings.json")
+    return value
+

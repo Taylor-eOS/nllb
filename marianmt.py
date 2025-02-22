@@ -40,5 +40,5 @@ def split_into_chunks(text, tokenizer, max_length=512, overlap=50):
     return chunks
 
 if __name__ == "__main__":
-    get_advice("I am a cat")
+    print(get_advice("I am a cat"))
 
