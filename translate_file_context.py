@@ -87,21 +87,26 @@ def main():
                 translations[idx] = PARAGRAPH_PLACEHOLDER
                 previous_sentence = None
                 continue
-            #Remove any trailing punctuation and keep it for later reattachment.
+            # Remove any trailing punctuation and keep it for later reattachment.
             trailing = ""
             if element and element[-1] in ".!?,;:":
                 trailing = element[-1]
                 element_mod = element[:-1].strip()
             else:
                 element_mod = element.strip()
-            #If there's a previous sentence, add it as context in parentheses.
+            # If there's a previous sentence, check if adding context exceeds limit
+            input_text = element_mod
             if previous_sentence:
-                input_text = f"{element_mod} ({previous_sentence[:-1].strip()})."
-                if len(tokenizer.encode(input_text)) > settings.TOKEN_LIMIT:
-                    input_text = element_mod
-            else:
-                input_text = element_mod
-            #print(f"Input: \"{input_text}\"")
+                context_text = f"{element_mod} ({previous_sentence[:-1].strip()})."
+                with tokenizer_lock:
+                    context_token_count = len(tokenizer.encode(context_text))
+                if context_token_count <= settings.TOKEN_LIMIT:
+                    input_text = context_text
+                else:
+                    print("Sentence too long, not adding context.")
+            print("Input:")
+            print(f"\"{input_text}\"")
+            # Submit translation task
             futures[idx] = executor.submit(translate_sentence, input_text, tokenizer, model, target_lang_token_id)
             previous_sentence = element
         for idx, future in futures.items():
@@ -112,13 +117,13 @@ def main():
                 result = "[TRANSLATION ERROR]"
                 print("Translation error")
             if "(" in result:
-                #Remove the injected context: use everything before the first '('.
+                # Remove the injected context
                 base_translation = result.split("(", 1)[0].strip()
             else:
                 base_translation = result.strip()
-            #Remove any extra whitespace before punctuation characters.
+            # Clean up punctuation spacing
             base_translation = re.sub(r"\s+([.,:;!?])", r"\1", base_translation)
-            #Reattach the original trailing punctuation if it's missing.
+            # Reattach original trailing punctuation if needed
             if trailing and not base_translation.endswith(trailing):
                 base_translation = base_translation.rstrip(".,:;!?") + trailing
             translations[idx] = base_translation
