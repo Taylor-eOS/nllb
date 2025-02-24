@@ -96,6 +96,7 @@ def main():
         output_parts.append(elem)
         if i < len(translations) - 1 and elem != PARAGRAPH_PLACEHOLDER and translations[i + 1] != PARAGRAPH_PLACEHOLDER:
             output_parts.append(' ')
+        print(f"Final translation: \"{elem}\"")
     output_text = ''.join(output_parts)
     with open(settings.OUTPUT_FILE, "w", encoding="utf-8") as outfile:
         outfile.write(output_text)
@@ -118,7 +119,6 @@ def main():
                 "corrected": False
             })
         counter += 1
-        print(f"Final translation: \"{translation}\"")
     json_output_file = settings.OUTPUT_FILE.replace(".txt", ".json")
     with open(json_output_file, "w", encoding="utf-8") as jsonfile:
         json.dump(translation_pairs, jsonfile, ensure_ascii=False, indent=4)
