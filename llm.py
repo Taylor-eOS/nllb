@@ -3,6 +3,8 @@ import torch
 import sentencepiece
 import settings
 
+deb = False
+
 MODEL_NAME = "Qwen/Qwen2.5-3B-Instruct"
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
@@ -11,10 +13,10 @@ TABLE = {'eng_Latn': 'English', 'deu_Latn': 'German', 'spa_Latn': 'Spanish', 'jp
 
 def get_advice(text, source=settings.SOURCE_LANG, target=settings.TARGET_LANG):
     prompt = f"Write this {TABLE[source]} sentence translated to {TABLE[target]}:  \"`{text}`\". (Only write the sentence itself, no other comment.) Translation: "
-    print(prompt)
+    if deb: print(prompt)
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
-    output_tokens = model.generate(
-        inputs.input_ids, max_new_tokens=300, temperature=0.2, top_p=0.9, do_sample=False)
+    #output_tokens = model.generate(inputs.input_ids, max_new_tokens=300, temperature=0.2, top_p=0.9, do_sample=False)
+    output_tokens = model.generate(inputs.input_ids, max_new_tokens=300, temperature=0.2, top_p=0.9)
     result = tokenizer.decode(output_tokens[0], skip_special_tokens=True).strip()
     if "Translation:" in result:
         result = result.split("Translation:")[-1].strip()
@@ -25,8 +27,8 @@ def get_advice(text, source=settings.SOURCE_LANG, target=settings.TARGET_LANG):
 def get_summary(text):
     prompt = f"Rewrite this sentence concisely: \"`{text}`\". (Write no other comment.) Rewriting: "
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
-    output_tokens = model.generate(
-        inputs.input_ids, max_new_tokens=150, temperature=0.2, top_p=0.9, do_sample=False)
+    #output_tokens = model.generate(inputs.input_ids, max_new_tokens=150, temperature=0.2, top_p=0.9, do_sample=False)
+    output_tokens = model.generate(inputs.input_ids, max_new_tokens=150, temperature=0.2, top_p=0.9)
     result = tokenizer.decode(output_tokens[0], skip_special_tokens=True).strip()
     if "Rewriting:" in result:
         result = result.split("Rewriting:")[-1].strip()

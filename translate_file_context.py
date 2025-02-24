@@ -5,9 +5,11 @@ import threading
 import settings
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from concurrent.futures import ThreadPoolExecutor
+from llm import get_summary
 
 tokenizer_lock = threading.Lock()
 PARAGRAPH_PLACEHOLDER = "\n\n"
+debug = False
 
 def split_sentences(text, language=settings.SOURCE_LANG[:2]):
     paragraph_breaks = re.split(r'(\n{2,})', text)
@@ -49,7 +51,7 @@ def translate_sentence(sentence, tokenizer, model, target_lang_token_id):
     tokens = model.generate(**inputs, forced_bos_token_id=target_lang_token_id)
     with tokenizer_lock:
         translation = tokenizer.batch_decode(tokens, skip_special_tokens=True)[0]
-    print(f'\"{translation}\"')
+    if debug: print(f'Full translated sentence: \"{translation}\"')
     return translation
 
 def main():
@@ -69,13 +71,13 @@ def main():
             continue
         with tokenizer_lock:
             token_count = len(tokenizer.encode(elem))
-            print(token_count)
+            if debug: print(token_count)
         if token_count > settings.TOKEN_LIMIT:
             parts = split_long_sentence(elem, tokenizer, settings.TOKEN_LIMIT)
             processed_elements.extend(parts)
         else:
             processed_elements.append(elem)
-    print(processed_elements)
+    if debug: print(f"Processed elements: \"{processed_elements}\"")
     elements = processed_elements
     translations = [None] * len(elements)
     previous_sentence = None
@@ -87,26 +89,35 @@ def main():
                 translations[idx] = PARAGRAPH_PLACEHOLDER
                 previous_sentence = None
                 continue
-            # Remove any trailing punctuation and keep it for later reattachment.
+            #Remove any trailing punctuation and keep it for later reattachment.
             trailing = ""
             if element and element[-1] in ".!?,;:":
                 trailing = element[-1]
                 element_mod = element[:-1].strip()
             else:
                 element_mod = element.strip()
-            # If there's a previous sentence, check if adding context exceeds limit
+            #If there's a previous sentence, check if adding context exceeds token limit
             input_text = element_mod
+            if debug: print(f'(Summary: \"{get_summary(input_text)}\")')
             if previous_sentence:
-                context_text = f"{element_mod} ({previous_sentence[:-1].strip()})."
+                context_text = f"{element_mod} ({previous_sentence.strip()})."
                 with tokenizer_lock:
                     context_token_count = len(tokenizer.encode(context_text))
                 if context_token_count <= settings.TOKEN_LIMIT:
                     input_text = context_text
+                    if debug: print("Use context")
                 else:
-                    print("Sentence too long, not adding context.")
-            print("Input:")
-            print(f"\"{input_text}\"")
-            # Submit translation task
+                    summary_text = f"{element_mod} ({get_summary(previous_sentence).strip()})."
+                    with tokenizer_lock:
+                        summary_token_count = len(tokenizer.encode(summary_text))
+                    if summary_token_count <= settings.TOKEN_LIMIT:
+                        input_text = summary_text
+                        if debug: print("Use summary")
+                    else:
+                        print("Sentence too long, not adding context.")
+            if debug: print("Input:")
+            if debug: print(f"\"{input_text}\"")
+            #Submit translation task
             futures[idx] = executor.submit(translate_sentence, input_text, tokenizer, model, target_lang_token_id)
             previous_sentence = element
         for idx, future in futures.items():
@@ -117,13 +128,13 @@ def main():
                 result = "[TRANSLATION ERROR]"
                 print("Translation error")
             if "(" in result:
-                # Remove the injected context
+                #Remove the injected context
                 base_translation = result.split("(", 1)[0].strip()
             else:
                 base_translation = result.strip()
-            # Clean up punctuation spacing
+            #Clean up punctuation spacing
             base_translation = re.sub(r"\s+([.,:;!?])", r"\1", base_translation)
-            # Reattach original trailing punctuation if needed
+            #Reattach original trailing punctuation if needed
             if trailing and not base_translation.endswith(trailing):
                 base_translation = base_translation.rstrip(".,:;!?") + trailing
             translations[idx] = base_translation
@@ -154,10 +165,11 @@ def main():
                 "corrected": False
             })
         counter += 1
+        print(f"Final translation: \"{translation}\"")
     json_output_file = settings.OUTPUT_FILE.replace(".txt", ".json")
     with open(json_output_file, "w", encoding="utf-8") as jsonfile:
         json.dump(translation_pairs, jsonfile, ensure_ascii=False, indent=4)
-    print("Translation written to output files")
+    print("Translation finished and written to output files")
 
 if __name__ == "__main__":
     main()
