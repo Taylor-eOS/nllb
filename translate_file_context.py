@@ -91,12 +91,12 @@ def main():
             if trailing and not base_translation.endswith(trailing):
                 base_translation = base_translation.rstrip(".,:;!?") + trailing
             translations[idx] = base_translation
+            print(f"Final translation: \"{translations[idx]}\"")
     output_parts = []
     for i, elem in enumerate(translations):
         output_parts.append(elem)
         if i < len(translations) - 1 and elem != PARAGRAPH_PLACEHOLDER and translations[i + 1] != PARAGRAPH_PLACEHOLDER:
             output_parts.append(' ')
-        print(f"Final translation: \"{elem}\"")
     output_text = ''.join(output_parts)
     with open(settings.OUTPUT_FILE, "w", encoding="utf-8") as outfile:
         outfile.write(output_text)
