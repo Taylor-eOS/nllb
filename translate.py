@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-#from utils import load_settings
+import settings
 
-source_lang = "eng_Latn"
-target_lang = "deu_Latn"
+source_lang = settings.SOURCE_LANG
+target_lang = settings.TARGET_LANG
 
 def main():
     model_name = "facebook/nllb-200-distilled-1.3B"
@@ -20,8 +20,7 @@ def main():
         inputs = tokenizer(german_text, return_tensors="pt")
         translated_tokens = model.generate(**inputs, forced_bos_token_id=target_lang_token_id)
         english_text = tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)[0]
-        print("\nTranslated text:")
-        print(english_text)
+        print("\nTranslated text: \"{english_text.replace(' .', '.')}\"")
 
 if __name__ == "__main__":
     main()
