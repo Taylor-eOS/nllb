@@ -91,7 +91,7 @@ def main():
             if trailing and not base_translation.endswith(trailing):
                 base_translation = base_translation.rstrip(".,:;!?") + trailing
             translations[idx] = base_translation
-            print(f"Final translation: \"{translations[idx]}\"")
+            print(f"\"{translations[idx]}\"")
     output_parts = []
     for i, elem in enumerate(translations):
         output_parts.append(elem)
