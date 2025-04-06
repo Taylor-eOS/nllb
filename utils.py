@@ -16,7 +16,9 @@ def load_settings(key):
         raise ValueError("Read token not found in settings.json")
     return value
 
-def split_sentences(text, language=settings.SOURCE_LANG[:2]):
+def split_sentences(text, language=None):
+    if language is None:
+        language = get_two_letter_code(settings.SOURCE_LANG)
     paragraph_breaks = re.split(r'(\n{2,})', text)
     segmenter = pysbd.Segmenter(language=language, clean=True)
     elements = []
@@ -58,4 +60,17 @@ def translate_sentence(sentence, tokenizer, model, target_lang_token_id):
         translation = tokenizer.batch_decode(tokens, skip_special_tokens=True)[0]
     if debug: print(f'Full translated sentence: \"{translation}\"')
     return translation
+
+def get_two_letter_code(long_code):
+    three_to_two = {
+        'spa': 'es',  # Spanish
+        'bul': 'bg',  # Bulgarian
+        'pol': 'pl',  # Polish
+        'jpn': 'ja',  # Japanese
+        'chi': 'zh',  # Chinese (alternative)
+        'kaz': 'kk',  # Kazakh
+        'slk': 'sk',  # Slovak
+    }
+    lang_part = long_code.split('_', 1)[0]
+    return three_to_two.get(lang_part, lang_part[:2])
 
